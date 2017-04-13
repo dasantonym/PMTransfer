@@ -1,0 +1,6 @@
+.idea
+.DS_Store
+data/*.json
+config.json
+node_modules
+!.gitkeep

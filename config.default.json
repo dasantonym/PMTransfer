@@ -1,0 +1,9 @@
+{
+  "user": "foo",
+  "database": "my_db",
+  "password": "secret",
+  "host": "localhost",
+  "port": 5432,
+  "max": 10,
+  "idleTimeoutMillis": 30000,
+}

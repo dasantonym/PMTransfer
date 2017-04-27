@@ -4,6 +4,7 @@ import path from 'path';
 import Debug from 'debug';
 import Chance from 'chance';
 import slug from 'slug';
+import moment from 'moment';
 
 import * as pgc from './lib/pg-connect';
 
@@ -13,6 +14,11 @@ const debug = Debug('pmtransfer:dump'),
 let _users = [], _groups = [],
     _tags = [], _castings = [],
     _eventsTags = [], _eventsUsers = [];
+
+
+//
+//
+// Utility functions
 
 function getTagsForPieceId(pieceId) {
     const tags = [];
@@ -88,7 +94,10 @@ function getUserByName(userName) {
     let res = undefined;
     _users.forEach(user => {
         if (!res && userName === user.name) {
-            res = user;
+            res = Object.assign({}, user);
+            if (res.password) {
+                delete res.password;
+            }
         }
     });
     if (!res) {
@@ -101,7 +110,10 @@ function getUserById(userId) {
     let res = undefined;
     _users.forEach(user => {
         if (!res && userId === user.legacy.id) {
-            res = user;
+            res = Object.assign({}, user);
+            if (res.password) {
+                delete res.password;
+            }
         }
     });
     if (!res) {
@@ -109,6 +121,11 @@ function getUserById(userId) {
     }
     return res;
 }
+
+
+//
+//
+// The beef starts here
 
 pgc.connect()
     .then(() => pgc.query('SELECT t.* FROM public.tags t'))
@@ -154,7 +171,7 @@ pgc.connect()
                 piece_id: row.piece_id,
                 user_id: row.user_id,
 
-                updated_at: row.updated_at,
+                updated_at: row.updated_at ? moment(row.updated_at) : undefined,
 
                 legacy: {
                     id: row.id,
@@ -177,13 +194,13 @@ pgc.connect()
                 name: row.login,
                 user_role_id: row.role_name,
 
-                created_at: row.created_at,
-                updated_at: row.updated_at,
+                created_at: row.created_at ? moment(row.created_at) : undefined,
+                updated_at: row.updated_at ? moment(row.updated_at) : undefined,
 
                 legacy: {
                     id: row.id,
                     scratchpad: row.scratchpad,
-                    last_login: row.last_login,
+                    last_login: row.last_login ? moment(row.last_login) : undefined,
                     is_performer: row.is_performer
                 }
             };
@@ -208,8 +225,8 @@ pgc.connect()
                 title: row.title,
                 description: `PieceMaker 1 Data / Short title: ${row.short_name}`,
 
-                created_at: row.created_at,
-                updated_at: row.updated_at,
+                created_at: row.created_at ? moment(row.created_at) : undefined,
+                updated_at: row.updated_at ? moment(row.updated_at) : undefined,
 
                 legacy: {
                     id: row.id,
@@ -256,11 +273,11 @@ pgc.connect()
                 event_group_id: null,
                 created_by_user_id: null,
 
-                utc_timestamp: row.happened_at,
-                duration: row.dur,
+                utc_timestamp: row.happened_at ? moment(row.happened_at).unix() * 10e-3 : undefined,
+                duration: row.dur ? row.dur : undefined,
 
-                created_at: row.created_at,
-                updated_at: row.updated_at,
+                created_at: row.created_at ? moment(row.created_at) : undefined,
+                updated_at: row.updated_at ? moment(row.updated_at) : undefined,
 
                 legacy: {
                     id: row.id,

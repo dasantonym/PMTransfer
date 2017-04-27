@@ -71,21 +71,29 @@ pgc.connect()
                                 results.push(lvObj);
                             });
                         }
-                    }, {concurrency: 1})
+                    }, {concurrency: 4})
                     .then(() => {
                         if (results.length > 0) {
-                            videos[key].dists[row.title] = results.sort((a, b) => {
-                                if (a.distance < b.distance) {
-                                    return -1;
-                                } else if (a.distance > b.distance) {
-                                    return 1;
-                                }
-                                return 0;
+                            return new Promise((resolve, reject) => {
+                                const filePath = path.join(__dirname, '..', 'data', 'videos', key, `${row.title}.json`);
+                                fs.writeFile(filePath, JSON.stringify(results.sort((a, b) => {
+                                    if (a.distance < b.distance) {
+                                        return -1;
+                                    } else if (a.distance > b.distance) {
+                                        return 1;
+                                    }
+                                    return 0;
+                                }), null, '\t'), err => {
+                                    if (err) {
+                                        return reject(err);
+                                    }
+                                    resolve();
+                                });
                             });
                         }
                         debug(`Created distance array for ${row.title}`);
                     });
-                }, {concurrency: 1});
+                }, {concurrency: 2});
             }
         } else {
             videos_notitle.push(row);
@@ -95,13 +103,13 @@ pgc.connect()
     }
 }, {concurrency: 1}))
 .then(() => {
-    const dataPath = path.join(__dirname, '..', 'data');
+    const dataPath = path.join(__dirname, '..', 'data', 'videos');
     debug(`Found ${Object.keys(events).length} types: ${Object.keys(events).join(', ')}`);
 
     debug(`Writing data files...`);
-    fs.writeFileSync(path.join(dataPath, 'video.json'), JSON.stringify(videos));
-    fs.writeFileSync(path.join(dataPath, 'videos_nofile.json'), JSON.stringify(videos_nofile));
-    fs.writeFileSync(path.join(dataPath, 'videos_notitle.json'), JSON.stringify(videos_notitle));
+    fs.writeFileSync(path.join(dataPath, 'video.json'), JSON.stringify(videos, null, '\t'));
+    fs.writeFileSync(path.join(dataPath, 'videos_nofile.json'), JSON.stringify(videos_nofile, null, '\t'));
+    fs.writeFileSync(path.join(dataPath, 'videos_notitle.json'), JSON.stringify(videos_notitle, null, '\t'));
 
     debug(`Done.`);
     process.exit(0);

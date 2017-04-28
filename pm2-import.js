@@ -16,6 +16,8 @@ const debug = Debug('pmtransfer:import'),
 const apiKeyPrefix = '0310X',
     apiKeyLength = 16;
 
+let _users;
+
 pgc.connect('pm2')
     .then(() => {
         return new Promise((resolve, reject) => {
@@ -64,6 +66,9 @@ pgc.connect('pm2')
                     return storeUser(user);
                 });
         }, {concurrency: 1});
+    })
+    .then(users => {
+        _users = users;
     })
     .then(() => {
         process.exit(0);

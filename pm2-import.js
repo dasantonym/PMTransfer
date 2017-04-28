@@ -41,7 +41,7 @@ new Promise((resolve, reject) => {
         return new Promise((resolve, reject) => {
             let payload = Object.assign({}, user);
             delete payload.legacy;
-            request.post(`${apiHost}/api/v1/users.json`)
+            request.post(`${apiHost}/api/v1/user.json`)
                 .send(payload)
                 .set('X-Access-Key', apiKey)
                 .set('Accept', 'application/json')
@@ -52,7 +52,7 @@ new Promise((resolve, reject) => {
                     resolve(res);
                 });
         });
-    }, {concurrency: 8});
+    }, {concurrency: 1});
 })
 .then(() => {
     process.exit(0);

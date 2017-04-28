@@ -7,6 +7,7 @@ import slug from 'slug';
 import moment from 'moment';
 
 import * as pgc from './lib/pg-connect';
+import { storeUser } from './lib/util';
 
 const debug = Debug('pmtransfer:dump'),
     chance = new Chance();
@@ -14,6 +15,15 @@ const debug = Debug('pmtransfer:dump'),
 let _users = [], _groups = [],
     _tags = [], _castings = [],
     _eventsTags = [], _eventsUsers = [];
+
+const roleIdMap = {
+    'ballet_master': 'annotator',
+    'group_user': 'annotator',
+    'user': 'annotator',
+    'director': 'annotator',
+    'group_admin': 'annotator',
+    'manager': 'annotator'
+};
 
 
 //
@@ -127,7 +137,7 @@ function getUserById(userId) {
 //
 // The beef starts here
 
-pgc.connect()
+pgc.connect('pm1')
     .then(() => pgc.query('SELECT t.* FROM public.tags t'))
     .then(res => {
         return Promise.map(res.rows, row => {
@@ -186,36 +196,27 @@ pgc.connect()
     .then(res => {
         return Promise.map(res.rows, row => {
             const user = {
-                email: `${row.login}.${row.id}@tfc.dev.null`,
+                email: `${row.login}.${row.id}@tfc.motionbank.org`,
                 password: new Array(3).fill(null).map(() => {
                     let syllable = chance.syllable();
                     return `${syllable.substring(0, 1).toUpperCase()}${syllable.substring(1)}`;
                 }).join('') + chance.integer({min: 10, max: 99}),
                 name: row.login,
-                user_role_id: row.role_name,
-
-                created_at: row.created_at ? moment(row.created_at) : undefined,
-                updated_at: row.updated_at ? moment(row.updated_at) : undefined,
+                user_role_id: roleIdMap[row.role_name] || row.role_name,
 
                 legacy: {
                     id: row.id,
                     scratchpad: row.scratchpad,
                     last_login: row.last_login ? moment(row.last_login) : undefined,
-                    is_performer: row.is_performer
+                    is_performer: row.is_performer,
+                    role_name: row.role_name,
+
+                    created_at: row.created_at ? moment(row.created_at) : undefined,
+                    updated_at: row.updated_at ? moment(row.updated_at) : undefined
                 }
             };
             _users.push(user);
-            return new Promise((resolve, reject) => {
-                const nameSlug = slug(row.login, {replacement: '_', lower: true}),
-                    userFile = path.join('.', 'data', 'users', `user-${row.id}-${nameSlug}.json`);
-                fs.writeFile(userFile, JSON.stringify(user, null, '\t'), err => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    debug(`Stored user-${row.id}-${nameSlug}.json`);
-                    resolve();
-                });
-            });
+            storeUser(user);
         }, {concurrency: 8});
     })
     .then(() => pgc.query('SELECT t.* FROM public.pieces t'))

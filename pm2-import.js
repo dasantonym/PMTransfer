@@ -8,7 +8,7 @@ import moment from 'moment';
 import crypto from 'crypto';
 
 import * as pgc from './lib/pg-connect';
-import { storeUser } from './lib/util';
+import { storeUser, findUserByLegacyId, storeGroup } from './lib/util';
 
 const debug = Debug('pmtransfer:import'),
     chance = new Chance();
@@ -16,7 +16,7 @@ const debug = Debug('pmtransfer:import'),
 const apiKeyPrefix = '0310X',
     apiKeyLength = 16;
 
-let _users;
+let _users, _groups;
 
 pgc.connect('pm2')
     .then(() => {
@@ -69,6 +69,50 @@ pgc.connect('pm2')
     })
     .then(users => {
         _users = users;
+        return new Promise((resolve, reject) => {
+            fs.readdir(path.join('.', 'data', 'groups'), (err, entries) => {
+                if (err) {
+                    return reject(err);
+                }
+                const dataFiles = [];
+                entries.map(entry => {
+                    if (path.extname(entry) === '.json') {
+                        dataFiles.push(path.basename(entry, '.json'));
+                    }
+                });
+                resolve(dataFiles);
+            });
+        });
+    })
+    .then(groups => {
+        return Promise.map(groups, groupFile => {
+            return new Promise((resolve, reject) => {
+                fs.readFile(path.join('.', 'data', 'groups',`${groupFile}.json`), (err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(JSON.parse(data));
+                });
+            })
+            .then(group => {
+                let author = findUserByLegacyId(_users, group.legacy.account_id);
+                if (!author) {
+                    author = findUserByLegacyId(_users, 1);
+                }
+                return pgc.query(
+                    'INSERT INTO public.event_groups (title, description, created_at, created_by_user_id) VALUES ($1, $2, $3, $4) RETURNING *',
+                    [group.title, group.description, moment(group.created_at), author.id]
+                )
+                    .then(res => {
+                        assert(res.rows.length === 1);
+                        group.id = res.rows[0].id;
+                        return storeGroup(group);
+                    });
+            });
+        }, {concurrency: 1});
+    })
+    .then(groups => {
+        _groups = groups;
     })
     .then(() => {
         process.exit(0);

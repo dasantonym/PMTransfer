@@ -22,7 +22,8 @@ const roleIdMap = {
     'user': 'annotator',
     'director': 'annotator',
     'group_admin': 'annotator',
-    'manager': 'annotator'
+    'manager': 'annotator',
+    'guest': 'annotator'
 };
 
 

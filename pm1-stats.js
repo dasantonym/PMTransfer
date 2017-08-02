@@ -72,7 +72,7 @@ new Promise((resolve, reject) => {
                         }
                         const groupEvent = JSON.parse(data),
                         eventDate = moment.unix(groupEvent.utc_timestamp * 100),
-                        statsKey = eventDate.format('YYYY-MM'),
+                        statsKey = eventDate.format('YYYY-MM-DD'),
                         videoKey = groupEvent.legacy.video_id ? `video-${groupEvent.legacy.video_id}` : null;
                         if (!dict[groupKey]) {
                             dict[groupKey] = group;

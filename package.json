@@ -10,12 +10,12 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.5.0",
-    "chance": "^1.0.6",
-    "debug": "^2.6.3",
-    "fluent-ffmpeg": "^2.1.0",
+    "chance": "^1.0.10",
+    "debug": "^2.6.8",
+    "fluent-ffmpeg": "^2.1.2",
     "levenshtein": "^1.0.5",
     "moment": "^2.18.1",
-    "pg": "^6.1.5",
+    "pg": "^6.4.1",
     "piecemaker-api-client": "0.0.21",
     "secure-random": "^1.1.1",
     "slug": "^0.9.1",
@@ -23,8 +23,8 @@
     "xlsx": "^0.9.13"
   },
   "devDependencies": {
-    "babel-cli": "^6.24.0",
-    "babel-core": "^6.24.0",
-    "babel-preset-env": "^1.2.2"
+    "babel-cli": "^6.25.0",
+    "babel-core": "^6.25.0",
+    "babel-preset-env": "^1.6.0"
   }
 }
